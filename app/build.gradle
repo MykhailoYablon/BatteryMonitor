@@ -3,17 +3,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
-    id("com.google.devtools.ksp") version "1.9.20-1.0.14"
+    id 'com.google.devtools.ksp'
 }
 
 android {
-    namespace = "com.miha.batterymonitor"
-    compileSdk = 35
+    namespace = "com.miha.battery"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.miha.batterymonitor"
+        applicationId = "com.miha.battery"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
@@ -63,6 +63,7 @@ dependencies {
     // Core Compose dependencies
     implementation libs.androidx.ui
     implementation libs.androidx.ui.tooling.preview
+    implementation(libs.androidx.activity.compose)
     implementation libs.androidx.foundation
     implementation libs.material
 
