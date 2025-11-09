@@ -57,7 +57,8 @@ class BatteryViewModel(application: Application) : AndroidViewModel(application)
                 batteryLevel = info.level,
                 temperature = info.temperature,
                 voltage = info.voltage,
-                capacity = info.capacity,
+                chargeCounter = info.chargeCounter,
+                currentCapacity = info.currentCapacity,
                 health = info.health
             )
             repository.insertEvent(event)

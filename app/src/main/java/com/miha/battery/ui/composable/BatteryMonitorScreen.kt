@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -75,10 +76,26 @@ fun CurrentBatteryCard(info: BatteryInfo) {
                 text = if (info.isCharging) "Charging" else "Discharging",
                 style = MaterialTheme.typography.titleMedium
             )
-            Divider()
+
+            HorizontalDivider()
+
+            // Capacity Information
+            if (info.chargeCounter > 0) {
+                Text(
+                    text = "Battery Capacity",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                InfoRow("Current Charge", "${info.chargeCounter / 1000} mAh")
+                InfoRow("Estimated Total", "${(info.chargeCounter / (info.level / 100f) / 1000).toInt()} mAh")
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
             InfoRow("Temperature", "${info.temperature}°C")
             InfoRow("Voltage", "${info.voltage} mV")
-            InfoRow("capacity", "${info.capacity} mV")
             InfoRow("Health", info.health)
             InfoRow("Technology", info.technology)
         }

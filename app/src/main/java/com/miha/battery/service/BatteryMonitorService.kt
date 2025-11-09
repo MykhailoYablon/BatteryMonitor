@@ -53,14 +53,35 @@ class BatteryMonitorService(private val context: Context) {
 
         val tech = intent.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY) ?: "Unknown"
 
+        // Get capacity information using BatteryManager
+        val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val chargeCounter = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+        val capacity = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+
+        // Get design capacity (total capacity) - API 28+
+        val currentCapacity = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        } else {
+            0
+        }
+
+        // Calculate capacity percentage (chargeCounter relative to typical battery capacity)
+        val capacityPercent = if (chargeCounter > 0) {
+            (chargeCounter.toFloat() / 3000000f) * 100f // Assuming ~3000mAh typical battery
+        } else {
+            0f
+        }
+
         _batteryInfo.value = BatteryInfo(
             level = batteryPct,
             isCharging = isCharging,
             temperature = temp,
             voltage = voltage,
-            capacity = 0,
             health = healthStr,
-            technology = tech
+            technology = tech,
+            currentCapacity = currentCapacity,
+            chargeCounter = chargeCounter,
+            capacityPercent = capacityPercent
         )
     }
 }

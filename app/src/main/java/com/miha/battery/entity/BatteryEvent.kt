@@ -12,6 +12,7 @@ data class BatteryEvent(
     val batteryLevel: Int,
     val temperature: Float,
     val voltage: Int,
-    val capacity: Int,
-    val health: String
+    val health: String,
+    val chargeCounter: Int = 0, // in μAh
+    val currentCapacity: Int = 0 // in μAh
 )
