@@ -1,21 +1,36 @@
 package com.miha.battery.ui.composable
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import com.miha.battery.data.BatteryInfo
 import com.miha.battery.entity.BatteryEvent
 import com.miha.battery.model.BatteryViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,13 +41,8 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text("Battery Monitor") },
-                actions = {
-                    TextButton(onClick = { viewModel.clearHistory() }) {
-                        Text("Clear")
-                    }
-                }
             )
         }
     ) { padding ->
@@ -45,7 +55,15 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
         ) {
             item { CurrentBatteryCard(batteryInfo) }
             item { StatsCard(stats) }
-            item { Text("Recent Events", style = MaterialTheme.typography.titleLarge) }
+//            item {
+//                IconButton(onClick = { viewModel.clearHistory() }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.brush),
+//                        contentDescription = "Clear History",
+//                        tint = Color(0xFF3AAB3E)
+//                    )
+//                }
+//            }
             items(events) { event ->
                 EventCard(event)
             }
@@ -68,15 +86,43 @@ fun CurrentBatteryCard(info: BatteryInfo) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val level = info.level
+            val batteryColor = when {
+                level <= 20 -> Color(0xFFEF5350)
+                level <= 50 -> lerp(
+                    Color(0xFFFFA726), // Red at 0%
+                    Color(0xFFFFEE58), // Green at 100%
+                    level / 100f
+                )
+
+                level <= 80 -> lerp(
+                    Color(0xFFFFEE58), // Red at 0%
+                    Color(0xFF00DC0C), // Green at 100%
+                    level / 100f
+                )
+
+                else -> Color(0xFF00DC0C)
+            }
+            // Animated Battery Visualization
+            BatteryVisual(
+                level = info.level,
+                batteryColor = batteryColor,
+                isCharging = info.isCharging,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+
             Text(
                 text = "${info.level}%",
-                style = MaterialTheme.typography.displayLarge
+                style = MaterialTheme.typography.displayLarge,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                color = batteryColor
             )
             Text(
                 text = if (info.isCharging) "Charging" else "Discharging",
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                color = if (info.isCharging) Color.Green else Color(0xFFFF5722)
             )
-
             HorizontalDivider()
 
             // Capacity Information
@@ -87,16 +133,27 @@ fun CurrentBatteryCard(info: BatteryInfo) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 InfoRow("Current Charge", "${info.chargeCounter / 1000} mAh")
-                InfoRow("Estimated Total", "${(info.chargeCounter / (info.level / 100f) / 1000).toInt()} mAh")
+                InfoRow(
+                    "Estimated Total",
+                    "${(info.chargeCounter / (info.level / 100f) / 1000).toInt()} mAh"
+                )
             }
 
             HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp),
             )
 
+            // Other Information
             InfoRow("Temperature", "${info.temperature}°C")
             InfoRow("Voltage", "${info.voltage} mV")
-            InfoRow("Health", info.health)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "Health", style = MaterialTheme.typography.bodyMedium)
+                Text(text = info.health, style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Green)
+            }
             InfoRow("Technology", info.technology)
         }
     }
@@ -128,28 +185,50 @@ fun StatColumn(label: String, count: Int) {
 @Composable
 fun EventCard(event: BatteryEvent) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Column {
-                Text(
-                    text = event.eventType,
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Text(
-                    text = formatTimestamp(event.timestamp),
-                    style = MaterialTheme.typography.bodySmall
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = event.eventType,
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = formatTimestamp(event.timestamp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = "${event.batteryLevel}%")
+                    Text(
+                        text = "${event.temperature}°C",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(text = "${event.batteryLevel}%")
-                Text(
-                    text = "${event.temperature}°C",
-                    style = MaterialTheme.typography.bodySmall
-                )
+
+            if (event.chargeCounter > 0) {
+                Divider(modifier = Modifier.padding(vertical = 4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Charge: ${event.chargeCounter / 1000} mAh",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "${event.voltage} mV",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }
