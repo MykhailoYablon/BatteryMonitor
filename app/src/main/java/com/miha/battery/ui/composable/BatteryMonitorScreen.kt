@@ -1,22 +1,11 @@
 package com.miha.battery.ui.composable
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -24,6 +13,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -32,15 +22,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.miha.battery.data.BatteryInfo
 import com.miha.battery.entity.BatteryEvent
@@ -60,11 +43,6 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Battery Monitor") },
-//                actions = {
-//                    TextButton(onClick = { viewModel.clearHistory() }) {
-//                        Text("Clear")
-//                    }
-//                }
             )
         }
     ) { padding ->
@@ -77,157 +55,21 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
         ) {
             item { CurrentBatteryCard(batteryInfo) }
             item { StatsCard(stats) }
-            item {
-                Text(
-                    "Recent Events",
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center
-                )
-            }
+//            item {
+//                IconButton(onClick = { viewModel.clearHistory() }) {
+//                    Icon(
+//                        painter = painterResource(id = R.drawable.brush),
+//                        contentDescription = "Clear History",
+//                        tint = Color(0xFF3AAB3E)
+//                    )
+//                }
+//            }
             items(events) { event ->
                 EventCard(event)
             }
         }
     }
 }
-
-@Composable
-fun BatteryVisual(
-    level: Int,
-    isCharging: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val animatedLevel by animateFloatAsState(
-        targetValue = level / 100f,
-        animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
-        label = "batteryLevel"
-    )
-
-    val infiniteTransition = rememberInfiniteTransition(label = "charging")
-    val chargingAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "chargingAlpha"
-    )
-
-    val batteryColor = when {
-        level <= 20 -> Color(0xFFEF5350)
-        level <= 50 -> lerp(
-            Color(0xFFFFA726), // Red at 0%
-            Color(0xFFFFEE58), // Green at 100%
-            level / 100f
-        )
-
-        level <= 80 -> lerp(
-            Color(0xFFFFEE58), // Red at 0%
-            Color(0xFF00DC0C), // Green at 100%
-            level / 100f
-        )
-
-        else -> Color(0xFF00DC0C)
-    }
-
-//    val batteryColor = lerp(
-//        Color(0xFFEF5350), // Red at 0%
-//        Color(0xFF02B90D), // Green at 100%
-//        level / 100f
-//    )
-
-    val chargingColor = Color(0xFF42A5F5)
-
-    Box(
-        modifier = modifier
-            .width(200.dp)
-            .height(100.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val batteryWidth = size.width * 0.85f
-            val batteryHeight = size.height * 0.7f
-            val batteryX = (size.width - batteryWidth) / 2
-            val batteryY = (size.height - batteryHeight) / 2
-
-            val tipWidth = size.width * 0.05f
-            val tipHeight = batteryHeight * 0.4f
-            val tipX = batteryX + batteryWidth
-            val tipY = batteryY + (batteryHeight - tipHeight) / 2
-
-            drawRoundRect(
-                color = Color.Gray,
-                topLeft = Offset(tipX, tipY),
-                size = Size(tipWidth, tipHeight),
-                cornerRadius = CornerRadius(4f, 4f)
-            )
-
-            drawRoundRect(
-                color = Color.Gray,
-                topLeft = Offset(batteryX, batteryY),
-                size = Size(batteryWidth, batteryHeight),
-                cornerRadius = CornerRadius(12f, 12f),
-                style = Stroke(width = 6f)
-            )
-
-            val padding = 8f
-            val fillWidth = (batteryWidth - padding * 2) * animatedLevel
-            val fillHeight = batteryHeight - padding * 2
-            val fillX = batteryX + padding
-            val fillY = batteryY + padding
-
-            if (fillWidth > 0) {
-                val fillColor = if (isCharging) chargingColor else batteryColor
-                val alpha = if (isCharging) chargingAlpha else 1f
-
-                val gradient = Brush.verticalGradient(
-                    colors = listOf(
-                        fillColor.copy(alpha = alpha),
-                        fillColor.copy(alpha = alpha * 0.7f)
-                    )
-                )
-
-                drawRoundRect(
-                    brush = gradient,
-                    topLeft = Offset(fillX, fillY),
-                    size = Size(fillWidth, fillHeight),
-                    cornerRadius = CornerRadius(6f, 6f)
-                )
-            }
-
-            if (isCharging) {
-                val boltColor = Color.White.copy(alpha = chargingAlpha)
-                val centerX = batteryX + batteryWidth / 2
-                val centerY = batteryY + batteryHeight / 2
-                val boltSize = batteryHeight * 0.4f
-
-                drawLine(
-                    color = boltColor,
-                    start = Offset(centerX - boltSize * 0.2f, centerY - boltSize * 0.5f),
-                    end = Offset(centerX + boltSize * 0.1f, centerY),
-                    strokeWidth = 8f,
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    color = boltColor,
-                    start = Offset(centerX + boltSize * 0.1f, centerY),
-                    end = Offset(centerX - boltSize * 0.1f, centerY),
-                    strokeWidth = 8f,
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    color = boltColor,
-                    start = Offset(centerX - boltSize * 0.1f, centerY),
-                    end = Offset(centerX + boltSize * 0.2f, centerY + boltSize * 0.5f),
-                    strokeWidth = 8f,
-                    cap = StrokeCap.Round
-                )
-            }
-        }
-    }
-}
-
 
 @Composable
 fun CurrentBatteryCard(info: BatteryInfo) {
@@ -244,9 +86,27 @@ fun CurrentBatteryCard(info: BatteryInfo) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val level = info.level
+            val batteryColor = when {
+                level <= 20 -> Color(0xFFEF5350)
+                level <= 50 -> lerp(
+                    Color(0xFFFFA726), // Red at 0%
+                    Color(0xFFFFEE58), // Green at 100%
+                    level / 100f
+                )
+
+                level <= 80 -> lerp(
+                    Color(0xFFFFEE58), // Red at 0%
+                    Color(0xFF00DC0C), // Green at 100%
+                    level / 100f
+                )
+
+                else -> Color(0xFF00DC0C)
+            }
             // Animated Battery Visualization
             BatteryVisual(
                 level = info.level,
+                batteryColor = batteryColor,
                 isCharging = info.isCharging,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
@@ -254,14 +114,16 @@ fun CurrentBatteryCard(info: BatteryInfo) {
             Text(
                 text = "${info.level}%",
                 style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                color = batteryColor
             )
             Text(
                 text = if (info.isCharging) "Charging" else "Discharging",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                color = if (info.isCharging) Color.Green else Color(0xFFFF5722)
             )
-            Divider()
+            HorizontalDivider()
 
             // Capacity Information
             if (info.chargeCounter > 0) {
@@ -277,12 +139,21 @@ fun CurrentBatteryCard(info: BatteryInfo) {
                 )
             }
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
 
             // Other Information
             InfoRow("Temperature", "${info.temperature}°C")
             InfoRow("Voltage", "${info.voltage} mV")
-            InfoRow("Health", info.health)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = "Health", style = MaterialTheme.typography.bodyMedium)
+                Text(text = info.health, style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Green)
+            }
             InfoRow("Technology", info.technology)
         }
     }
