@@ -1,5 +1,11 @@
 package com.miha.battery.ui.composable
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +20,8 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,7 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.miha.battery.R
 import com.miha.battery.data.BatteryInfo
 import com.miha.battery.entity.BatteryEvent
 import com.miha.battery.model.BatteryViewModel
@@ -43,9 +53,19 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Battery Monitor") },
+                actions = {
+                    IconButton(onClick = { viewModel.clearHistory() }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.brush),
+                            contentDescription = "Clear History",
+                            tint = Color(0xFF3AAB3E)
+                        )
+                    }
+                }
             )
-        }
-    ) { padding ->
+        },
+
+        ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,8 +73,15 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { CurrentBatteryCard(batteryInfo) }
-            item { StatsCard(stats) }
+            item {
+                RainbowBorder {
+                    CurrentBatteryCard(batteryInfo)
+                }
+            }
+            item {
+                RainbowBorder {
+                    StatsCard(stats)
+                } }
 //            item {
 //                IconButton(onClick = { viewModel.clearHistory() }) {
 //                    Icon(
@@ -65,7 +92,9 @@ fun BatteryMonitorScreen(viewModel: BatteryViewModel) {
 //                }
 //            }
             items(events) { event ->
-                EventCard(event)
+                RainbowBorder {
+                    EventCard(event)
+                }
             }
         }
     }
@@ -151,8 +180,10 @@ fun CurrentBatteryCard(info: BatteryInfo) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "Health", style = MaterialTheme.typography.bodyMedium)
-                Text(text = info.health, style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Green)
+                Text(
+                    text = info.health, style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Green
+                )
             }
             InfoRow("Technology", info.technology)
         }
